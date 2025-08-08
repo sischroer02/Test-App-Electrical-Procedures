@@ -116,9 +116,9 @@ class JboxTestStandBaseTest:
     async def Read_480V_Supplied_Test_IO(self):
         self.NUM_TESTS_PASSED_480V
         try:
-            # Initialize the service
-            await self.service.initialize()
-            logger.info("Broccoli service initialized")
+            async with asyncio.timeout(10):  # Set a 10-second timeout
+                await self.service.initialize()
+                logger.info("Broccoli service initialized")
 
             # Read all symbols for 
 
@@ -171,9 +171,9 @@ class JboxTestStandBaseTest:
     async def Read_120V_Supplied_Test_IO(self):
         self.NUM_TESTS_PASSED_120V
         try:
-            # Initialize the service
-            await self.service.initialize()
-            logger.info("Broccoli service initialized")
+            async with asyncio.timeout(10):  # Set a 10-second timeout
+                await self.service.initialize()
+                logger.info("Broccoli service initialized")
 
             # Read all symbols for 
 
@@ -227,9 +227,9 @@ class JboxTestStandBaseTest:
     async def Read_Redundant_Supplied_Test_IO(self):
         self.NUM_TESTS_PASSED_REDUNDANT
         try:
-            # Initialize the service
-            await self.service.initialize()
-            logger.info("Broccoli service initialized")
+            async with asyncio.timeout(10):  # Set a 10-second timeout
+                await self.service.initialize()
+                logger.info("Broccoli service initialized")
 
             # Read all symbols for 
 
