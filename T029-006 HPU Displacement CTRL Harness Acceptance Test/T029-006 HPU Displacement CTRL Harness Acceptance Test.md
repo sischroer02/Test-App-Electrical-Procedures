@@ -26,14 +26,14 @@ BROC_URL = "http://10.14.202.41:1358"
 
 
 HPU_CTRL_CABLE_TEST_LIBRARY = {
-    1: {'CABLE PIN' : 1, 'OUTPUT_VARIABLE_NAME' : '', 'INPUT_VARIABLE_NAME' : 'J1001_1', 'XV' : True},
-    2: {'CABLE PIN' : 2, 'OUTPUT_VARIABLE_NAME' : '', 'INPUT_VARIABLE_NAME' : 'J1001_2', 'XV' : True}
+    1: {'CABLE PIN' : 1, 'OUTPUT_VARIABLE_NAME' : 'S201_1', 'INPUT_VARIABLE_NAME' : 'J1001_1', 'XV' : True},
+    2: {'CABLE PIN' : 2, 'OUTPUT_VARIABLE_NAME' : 'S201_3', 'INPUT_VARIABLE_NAME' : 'J1001_2', 'XV' : True}
 }
 
 
 
 
-class VSECableTestBase:
+class HPUCableTestBase:
     def __init__(self):
         self.testvariable = True
         self.service = BroccoliSymbolService(broc_url=BROC_URL, logger=logger)
@@ -84,17 +84,15 @@ class VSECableTestBase:
                 self.fail = True
                 RESULT.set_metadata('HPU Displacement CTRL VALVE Cable Recurring Test Result', False)
                 RESULT.save_delta()
+            else:
+                RESULT.set_metadata('HPU Displacement CTRL VALVE Cable Recurring Test Result', True)
+                RESULT.save_delta()
             # Clean up
             try:
                 await self.service.close()
                 logger.info("Broccoli service closed")
             except Exception as e:
                 logger.error("Error closing service: %s", e)
-
-    def Complete_Atos_Test(self):
-        if self.fail != True:
-        RESULT.set_metadata('HPU Displacement CTRL VALVE Cable Recurring Test Result', True)
-        RESULT.save_delta()
         
 
 ```
@@ -144,25 +142,13 @@ continue_on_fail: false
 (2.1) Run Duration Test
 
 ``` python borescript FunctionSet tbclib
-
-async def run_test_over_time():
+async def run_test():
     base_test = HPUCableTestBase()
-    start_time = asyncio.get_event_loop().time()
-    duration = 60  # 1 minutes in seconds
-    interval = 3    # 3 seconds between checks
+    await base_test.ReadHPUTestIO()
 
-    while asyncio.get_event_loop().time() - start_time < duration:
-        logger.info("Starting test cycle at %s seconds", asyncio.get_event_loop().time() - start_time)
-        
-        # Run 480V tests
-        await base_test.ReadHPUTestIO()
-    
-        
-        logger.info("Completed test cycle. Sleeping for %d seconds", interval)
-        await asyncio.sleep(interval)
 
 if __name__ == "__main__":
-    asyncio.run(run_test_over_time())
+    asyncio.run(run_test())
 
 ```
 

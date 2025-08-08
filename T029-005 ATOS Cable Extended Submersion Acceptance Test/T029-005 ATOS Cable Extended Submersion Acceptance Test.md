@@ -1,14 +1,14 @@
-# T029-007 VSE IO CABLE HARNESS, ASM Acceptance Test
+# T029-005 ATOS Cable Extended Submersion Acceptance Testt
 
 ``` yaml boring-test
 machine: T029 - Electrical
-testname: T029-007 VSE IO CABLE HARNESS, ASM Acceptance Test
+testname: T029-005 ATOS Cable Extended Submersion Acceptance Test
 classification: T029 - Electrical
 ```
 
 ## Purpose
 
-Electrically Test the Custom VSE IO Cable Harness for Continuity
+Electrically Test the Custom ATOS Cable for Continuity and Water Ingress Protection over Time
 
 
 ``` python borelib
@@ -25,33 +25,34 @@ logger = logging.getLogger(__name__)
 BROC_URL = "http://10.14.202.41:1358"
 
 
-VSE_CABLE_TEST_LIBRARY = {
-    1: {'CABLE PIN' : 1, 'OUTPUT_VARIABLE_NAME' : 'S201_1', 'INPUT_VARIABLE_NAME' : 'J202_1', 'XV' : True},
-    2: {'CABLE PIN' : 2, 'OUTPUT_VARIABLE_NAME' : 'S201_2', 'INPUT_VARIABLE_NAME' : 'J202_2', 'XV' : True},
-    3: {'CABLE PIN' : 3, 'OUTPUT_VARIABLE_NAME' : 'S201_3', 'INPUT_VARIABLE_NAME' : 'J202_3', 'XV' : True},
-    4: {'CABLE PIN' : 4, 'OUTPUT_VARIABLE_NAME' : 'S201_4', 'INPUT_VARIABLE_NAME' : 'J202_4', 'XV' : True},
-    5: {'CABLE PIN' : 5, 'OUTPUT_VARIABLE_NAME' : 'S201_5', 'INPUT_VARIABLE_NAME' : 'J202_5', 'XV' : True},
-    
+ATOS_CABLE_TEST_LIBRARY = {
+    1: {'ATOS PIN' : 1, 'OUTPUT_VARIABLE_NAME' : 'J302_1', 'INPUT_VARIABLE_NAME' : 'J1101_1', 'XV' : True},
+    2: {'ATOS PIN' : 2, 'OUTPUT_VARIABLE_NAME' : 'J302_2', 'INPUT_VARIABLE_NAME' : 'J1101_2', 'XV' : True},
+    3: {'ATOS PIN' : 3, 'OUTPUT_VARIABLE_NAME' : 'J302_3', 'INPUT_VARIABLE_NAME' : 'J1101_3', 'XV' : True},
+    4: {'ATOS PIN' : 4, 'OUTPUT_VARIABLE_NAME' : 'J302_4', 'INPUT_VARIABLE_NAME' : 'J1101_4', 'XV' : True},
+    5: {'ATOS PIN' : 5, 'OUTPUT_VARIABLE_NAME' : 'UNDEFINED', 'INPUT_VARIABLE_NAME' : 'J1101_5', 'XV' : True}
 }
 
 
-class VSECableTestBase:
+
+
+class AtosTestBase:
     def __init__(self):
         self.testvariable = True
         self.service = BroccoliSymbolService(broc_url=BROC_URL, logger=logger)
-        self.NUM_TESTS_PASSED = 0
-        self.NUM_TESTS = 2
+        self.NUM_TESTS_PASSED_ATOS = 0
+        self.NUM_TESTS_ATOS = 5
         self.fail = False
 
 
-    async def ReadVSETestIO(self):
+    async def Read_ATOS_Test_IO(self):
         try:
             # Initialize the service
-            self.NUM_TESTS_PASSED = 0
+            self.NUM_TESTS_PASSED_ATOS = 0
             await self.service.initialize()
             logger.info("Broccoli service initialized")
 
-            for key, entry in VSE_CABLE_TEST_LIBRARY.items():
+            for key, entry in ATOS_CABLE_TEST_LIBRARY.items():
                 self.input_variable_name = entry['INPUT_VARIABLE_NAME']
                 self.output_variable_name = entry['OUTPUT_VARIABLE_NAME']
                 self.input_symbol = SymbolHandle(self.input_variable_name)
@@ -69,7 +70,7 @@ class VSECableTestBase:
                     # RESULT.set_metadata(ATOS_CABLE_TEST_LIBRARY[key]["TEST_NAME"], ATOS_CABLE_TEST_LIBRARY[key]["Pass Value"])
                     # RESULT.save_delta()
                     # logger.info("Pass result saved")
-                    self.NUM_TESTS_PASSED += 1
+                    self.NUM_TESTS_PASSED_ATOS += 1
                 else:
                     # RESULT.set_metadata(ATOS_CABLE_TEST_LIBRARY[key]["TEST_NAME"], ATOS_CABLE_TEST_LIBRARY[key]["Fail Value"])
                     # RESULT.save_delta()
@@ -81,13 +82,10 @@ class VSECableTestBase:
             RESULT.save_delta()
 
         finally:
-            logger.info(self.NUM_TESTS_PASSED)
-            if (self.NUM_TESTS_PASSED_HPU < self.NUM_TESTS) or self.fail:
+            logger.info(self.NUM_TESTS_PASSED_ATOS)
+            if (self.NUM_TESTS_PASSED_ATOS < self.NUM_TESTS_ATOS) or self.fail:
                 self.fail = True
-                RESULT.set_metadata('VSE IO CABLE HARNESS Test Result', False)
-                RESULT.save_delta()
-            else:
-                RESULT.set_metadata('VSE IO CABLE HARNESS Test Result', True)
+                RESULT.set_metadata('ATOS Recurring Test Result', False)
                 RESULT.save_delta()
             # Clean up
             try:
@@ -95,6 +93,12 @@ class VSECableTestBase:
                 logger.info("Broccoli service closed")
             except Exception as e:
                 logger.error("Error closing service: %s", e)
+
+    async def Complete_Atos_Test(self):
+        if self.fail != True:
+            RESULT.set_metadata('ATOS Recurring Test Result', True)
+            RESULT.save_delta()
+        
         
 
 ```
@@ -127,7 +131,9 @@ continue_on_fail: false
 
 ### 1\. Initial Conditions
 
-(1.1) Hook up VSE IO CABLE HARNESS Cable to tester
+(1.1) Hook up ATOS Cable to tester
+
+(1.2) Fully Submerge Cable Connection Point to the bottom of the barrel
 
 ```yaml test-field
 name: Initial Conditions Confirmed
@@ -144,18 +150,32 @@ continue_on_fail: false
 (2.1) Run Duration Test
 
 ``` python borescript FunctionSet tbclib
-async def run_test():
-    base_test = VSECableTestBase()
-    await base_test.ReadVSETestIO()
 
+async def run_test_over_time():
+    base_test = AtosTestBase()
+    start_time = asyncio.get_event_loop().time()
+    duration = 600  # 10 minutes in seconds
+    interval = 3    # 3 seconds between checks
+
+    while asyncio.get_event_loop().time() - start_time < duration:
+        logger.info("Starting test cycle at %s seconds", asyncio.get_event_loop().time() - start_time)
+        
+        # Run 480V tests
+        await base_test.Read_ATOS_Test_IO()
+    
+        
+        logger.info("Completed test cycle. Sleeping for %d seconds", interval)
+        await asyncio.sleep(interval)
+
+    await base_test.Complete_Atos_Test()
 
 if __name__ == "__main__":
-    asyncio.run(run_test())
+    asyncio.run(run_test_over_time())
 
 ```
 
 ``` yaml test-field
-name: VSE IO CABLE HARNESS Test Result
+name: ATOS Recurring Test Result
 type: boolean
 
 validation: true

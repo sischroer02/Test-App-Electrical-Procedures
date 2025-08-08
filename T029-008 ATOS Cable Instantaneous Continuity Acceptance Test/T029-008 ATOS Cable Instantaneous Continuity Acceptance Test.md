@@ -1,8 +1,8 @@
-# T029-005 ATOS Cable Acceptance Test
+# T029-005 ATOS Cable Instantaneous Continuity Acceptance Test
 
 ``` yaml boring-test
 machine: T029 - Electrical
-testname: T029-005 ATOS Cable Acceptance Test
+testname: T029-005 ATOS Cable Instantaneous Continuity Acceptance Test
 classification: T029 - Electrical
 ```
 
@@ -85,7 +85,10 @@ class AtosTestBase:
             logger.info(self.NUM_TESTS_PASSED_ATOS)
             if (self.NUM_TESTS_PASSED_ATOS < self.NUM_TESTS_ATOS) or self.fail:
                 self.fail = True
-                RESULT.set_metadata('ATOS Recurring Test Result', False)
+                RESULT.set_metadata('ATOS Test Result', False)
+                RESULT.save_delta()
+            else:
+                RESULT.set_metadata('ATOS Test Result', True)
                 RESULT.save_delta()
             # Clean up
             try:
@@ -93,11 +96,6 @@ class AtosTestBase:
                 logger.info("Broccoli service closed")
             except Exception as e:
                 logger.error("Error closing service: %s", e)
-
-    def Complete_Atos_Test(self):
-        if self.fail != True:
-        RESULT.set_metadata('ATOS Recurring Test Result', True)
-        RESULT.save_delta()
         
 
 ```
@@ -149,25 +147,13 @@ continue_on_fail: false
 (2.1) Run Duration Test
 
 ``` python borescript FunctionSet tbclib
-
-async def run_test_over_time():
+async def run_test():
     base_test = AtosTestBase()
-    start_time = asyncio.get_event_loop().time()
-    duration = 600  # 10 minutes in seconds
-    interval = 3    # 3 seconds between checks
+    await base_test.Read_ATOS_Test_IO()
 
-    while asyncio.get_event_loop().time() - start_time < duration:
-        logger.info("Starting test cycle at %s seconds", asyncio.get_event_loop().time() - start_time)
-        
-        # Run 480V tests
-        await base_test.Read_ATOS_Test_IO()
-    
-        
-        logger.info("Completed test cycle. Sleeping for %d seconds", interval)
-        await asyncio.sleep(interval)
 
 if __name__ == "__main__":
-    asyncio.run(run_test_over_time())
+    asyncio.run(run_test())
 
 ```
 
