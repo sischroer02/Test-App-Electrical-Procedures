@@ -35,8 +35,6 @@ VSE_CABLE_TEST_LIBRARY = {
 }
 
 
-
-
 class VSECableTestBase:
     def __init__(self):
         self.testvariable = True
